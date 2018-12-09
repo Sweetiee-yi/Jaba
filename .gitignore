@@ -3,3 +3,5 @@
 *.class
 target/
 jaba.iml
+
+**/.DS_Store
