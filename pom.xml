@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.soud</groupId>
     <artifactId>jaba</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -14,6 +14,11 @@
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.hankcs</groupId>
+            <artifactId>aho-corasick-double-array-trie</artifactId>
+            <version>1.2.1</version>
         </dependency>
     </dependencies>
 

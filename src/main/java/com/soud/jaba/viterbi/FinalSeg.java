@@ -1,7 +1,7 @@
 package com.soud.jaba.viterbi;
 
+import com.soud.jaba.Pair;
 import com.soud.jaba.util.RegexSplitUtils;
-import com.sun.tools.javac.util.Pair;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -68,14 +68,14 @@ public class FinalSeg {
         startP.put('M', -3.14e+100);
         startP.put('S', -1.4652633398537678);
 
-        transP.put(new Pair<>('B', 'E'), -0.510825623765990);
-        transP.put(new Pair<>('B', 'M'), -0.916290731874155);
-        transP.put(new Pair<>('E', 'B'), -0.5897149736854513);
-        transP.put(new Pair<>('E', 'S'), -0.8085250474669937);
-        transP.put(new Pair<>('M', 'E'), -0.33344856811948514);
-        transP.put(new Pair<>('M', 'M'), -1.2603623820268226);
-        transP.put(new Pair<>('S', 'B'), -0.7211965654669841);
-        transP.put(new Pair<>('S', 'S'), -0.6658631448798212);
+        transP.put(Pair.of('B', 'E'), -0.510825623765990);
+        transP.put(Pair.of('B', 'M'), -0.916290731874155);
+        transP.put(Pair.of('E', 'B'), -0.5897149736854513);
+        transP.put(Pair.of('E', 'S'), -0.8085250474669937);
+        transP.put(Pair.of('M', 'E'), -0.33344856811948514);
+        transP.put(Pair.of('M', 'M'), -1.2603623820268226);
+        transP.put(Pair.of('S', 'B'), -0.7211965654669841);
+        transP.put(Pair.of('S', 'S'), -0.6658631448798212);
 
         InputStream inputStream = getClass().getResourceAsStream(EMIT_P_PATH);
         try {
@@ -131,15 +131,15 @@ public class FinalSeg {
                 Double prob = emitP.get(y).getOrDefault(sentence.charAt(i), MIN_LOG_PROB_VALUE);
                 Pair<Character, Double> candidate = null;
                 for (char y0 : prevStatus.get(y)) {
-                    Double p = transP.getOrDefault(new Pair<>(y0, y), MIN_LOG_PROB_VALUE);
+                    Double p = transP.getOrDefault(Pair.of(y0, y), MIN_LOG_PROB_VALUE);
                     p += (prob + v.get(i - 1).get(y0));
-                    if (candidate == null || candidate.snd <= p) {
-                        candidate = new Pair<>(y0, p);
+                    if (candidate == null || candidate.getValue() <= p) {
+                        candidate = Pair.of(y0, p);
                     }
                 }
                 assert candidate != null;
-                v.get(v.size() - 1).put(y, candidate.snd);
-                newPath.put(y, new Node(y, path.get(candidate.fst)));
+                v.get(v.size() - 1).put(y, candidate.getValue());
+                newPath.put(y, new Node(y, path.get(candidate.getKey())));
             }
             path = newPath;
         }

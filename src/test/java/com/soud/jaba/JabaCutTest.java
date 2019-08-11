@@ -4,11 +4,6 @@ import com.soud.jaba.enumeration.CutModeEnum;
 import com.soud.jaba.util.RegexSplitUtils;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -143,40 +138,5 @@ public class JabaCutTest {
         for (String t : RegexSplitUtils.split(p, s)) {
             System.out.println(t);
         }
-    }
-
-    @Test
-    public void testWeicheng() {
-        File file = new File("/Users/wangxiaoyi/Downloads/围城.txt");
-        BufferedReader reader = null;
-        List<String> sentences = new ArrayList<>();
-        try {
-            reader = new BufferedReader(new FileReader(file));
-            String tempString;
-            while ((tempString = reader.readLine()) != null) {
-                sentences.add(tempString);
-            }
-            reader.close();
-        } catch (IOException ignored) {
-        } finally {
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-            } catch (IOException ignored) {
-            }
-        }
-
-
-        long t = System.currentTimeMillis();
-        int s = 0;
-        for (int i = 0; i < 50; i++) {
-            for (String sentence : sentences) {
-                int l = jaba.cut(sentence, CutModeEnum.CUT).size();
-                s += l;
-            }
-        }
-        System.out.println((System.currentTimeMillis() - t) / 1000.);
-        System.out.println(s);
     }
 }

@@ -4,7 +4,7 @@
 
 感谢jieba分词原作者[fxsjy](https://github.com/fxsjy)，本项目实现了 java 版本的 jieba。
 
-创建此项目起因：[jieba-analysis](https://github.com/huaban/jieba-analysis)这个项目分词的结果和python版本不一致，还会把英文字母全部改为小写。所以我重新实现了一下 java 版本的 jieba，保证了分词结果和 python 版本一致。
+创建此项目起因：[jieba-analysis](https://github.com/huaban/jieba-analysis)这个项目分词的结果和python版本不一致，还会把英文字母全部改为小写。所以我重新实现了一下 java 版本的 jieba，保证了分词结果和 python 版本一致，并且分词速度快一倍（不算加载字典时间）。
 
 
 简介
@@ -39,7 +39,7 @@ public void testDemo() {
 算法
 =================
 
--   \[ \] 基于 `DoubleArrayTrie` 树结构存储的词典，性能比 `trie` 树更好
+-   \[ \] 基于 `AhoCorasickDoubleArrayTrie` 树结构存储的词典，性能比 `trie` 树更好
 -   \[ \] 生成所有切词可能的有向无环图 `DAG`
 -   \[ \] 采用动态规划算法计算最佳切词组合
 -   \[ \] 基于 `HMM` 模型，采用 `Viterbi` (维特比)算法实现未登录词识别

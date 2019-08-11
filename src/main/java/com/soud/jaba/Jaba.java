@@ -2,10 +2,14 @@ package com.soud.jaba;
 
 import com.soud.jaba.enumeration.CutModeEnum;
 import com.soud.jaba.util.RegexSplitUtils;
+import com.soud.jaba.util.WordBuilder;
 import com.soud.jaba.viterbi.FinalSeg;
-import com.sun.tools.javac.util.Pair;
 
-import java.util.*;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
@@ -25,151 +29,11 @@ public class Jaba {
     private static FinalSeg finalSeg = FinalSeg.getInstance();
 
     /**
-     * 基于trie查询前缀，生成句子中汉字所有可能成词情况所构成的有向无环图
+     * 加载用户自定义字典
+     * @param inputStream 字典
      */
-    private HashMap<Integer, List<Integer>> makeDAG(String sentence) {
-        HashMap<Integer, List<Integer>> dag = new HashMap<>();
-        int len = sentence.length();
-        for (int k = 0; k < len; k++) {
-            List<Integer> list = new ArrayList<>();
-            HashSet<String> res = tokenizer.searchPrefix(sentence.substring(k));
-            for (int i = k; i < len; i++) {
-                String s = sentence.substring(k, i + 1);
-                if (res.contains(s)) {
-                    list.add(i);
-                }
-            }
-            if (list.isEmpty()) {
-                list.add(k);
-            }
-            dag.put(k, list);
-        }
-        return dag;
-    }
-
-    /**
-     * 采用动态规划查找最大概率路径, 找出基于词频的最大切分组合
-     */
-    private HashMap<Integer, Pair<Integer, Double>> calcMaxProbPath(String sentence, HashMap<Integer, List<Integer>> dag) {
-        int len = sentence.length();
-        HashMap<Integer, Pair<Integer, Double>> route = new HashMap<>();
-        route.put(len, new Pair<>(0, 0d));
-        double logTotal = Math.log(tokenizer.getTotal());
-        for (int i = len - 1; i >= 0; i--) {
-            int offset = 0;
-            double maxProb = -Double.MAX_VALUE;
-            for (Integer x : dag.get(i)) {
-                Integer freq = tokenizer.getWordFreq(sentence.substring(i, x + 1));
-                double prob = Math.log(freq > 0 ? freq : 1) - logTotal + route.get(x + 1).snd;
-                if (maxProb < prob) {
-                    maxProb = prob;
-                    offset = x;
-                }
-            }
-            route.put(i, new Pair<>(offset, maxProb));
-        }
-        return route;
-    }
-
-    /**
-     * 根据 DAG 上算出的最大概率路径将句子分词
-     */
-    private List<String> cutByDAG(String sentence) {
-        List<String> result = new ArrayList<>();
-        HashMap<Integer, List<Integer>> dag = makeDAG(sentence);
-        HashMap<Integer, Pair<Integer, Double>> route = calcMaxProbPath(sentence, dag);
-        int len = sentence.length();
-        int st = 0;
-        int ed;
-        String word;
-        StringBuilder sb = new StringBuilder();
-        while (st < len) {
-            ed = route.get(st).fst + 1;
-            word = sentence.substring(st, ed);
-            if (word.length() == 1 && RE_ENG.matcher(word).find()) {
-                sb.append(word);
-            } else {
-                if (sb.length() > 0) {
-                    result.add(sb.toString());
-                    sb.setLength(0);
-                }
-                result.add(word);
-            }
-            st = ed;
-        }
-        if (sb.length() > 0) {
-            result.add(sb.toString());
-        }
-        return result;
-    }
-
-    /**
-     * 如果词语不在字典内（freq==0），使用 HMM 判断是否可能是未登录词
-     */
-    private void doIfNeedHMM(StringBuilder sb, List<String> result) {
-        if (sb.length() > 0) {
-            if (sb.length() == 1) {
-                result.add(sb.toString());
-            } else {
-                Integer freq = tokenizer.getWordFreq(sb.toString());
-                if (freq == 0) {
-                    result.addAll(finalSeg.cut(sb.toString()));
-                } else {
-                    result.addAll(Arrays.asList(sb.toString().split("")));
-                }
-            }
-            sb.setLength(0);
-        }
-    }
-
-    /**
-     * 根据 DAG 上算出的最大概率路径将句子分词，并使用 HMM 识别可能出现的未登录词
-     */
-    private List<String> cutByDAGWithHMM(String sentence) {
-        List<String> result = new ArrayList<>();
-        HashMap<Integer, List<Integer>> dag = makeDAG(sentence);
-        HashMap<Integer, Pair<Integer, Double>> route = calcMaxProbPath(sentence, dag);
-        int len = sentence.length();
-        int st = 0;
-        int ed;
-        String word;
-        StringBuilder sb = new StringBuilder();
-        while (st < len) {
-            ed = route.get(st).fst + 1;
-            word = sentence.substring(st, ed);
-            if (word.length() == 1) {
-                sb.append(word);
-            } else {
-                doIfNeedHMM(sb, result);
-                result.add(word);
-            }
-            st = ed;
-        }
-        doIfNeedHMM(sb, result);
-        return result;
-    }
-
-    /**
-     * 全模式，把句子中所有的可以成词的词语都扫描出来, 速度非常快，但是不能解决歧义
-     */
-    private List<String> cutAll(String sentence) {
-        List<String> result = new ArrayList<>();
-        HashMap<Integer, List<Integer>> dag = makeDAG(sentence);
-        int last[] = {-1};
-        dag.forEach((k, l) -> {
-            if (l.size() == 1 && k > last[0]) {
-                result.add(sentence.substring(k, l.get(0) + 1));
-                last[0] = l.get(0);
-            } else {
-                l.forEach(j -> {
-                    if (j > k) {
-                        result.add(sentence.substring(k, j + 1));
-                        last[0] = j;
-                    }
-                });
-            }
-        });
-        return result;
+    public void loadUserDict(InputStream inputStream) {
+        tokenizer.loadDictionary(inputStream);
     }
 
     /**
@@ -204,6 +68,101 @@ public class Jaba {
                 }
             }
         }
+        return result;
+    }
+
+    /**
+     * 根据 DAG 上算出的最大概率路径将句子分词
+     */
+    private List<String> cutByDAG(String sentence) {
+        List<String> result = new ArrayList<>();
+        SentenceDAG sentenceDAG = new SentenceDAG(sentence, tokenizer);
+        Map<Integer, Pair<Integer, Double>> route = sentenceDAG.getRoute();
+        int st = 0;
+        int ed;
+        StringBuilder sb = new StringBuilder();
+        while (st < sentence.length()) {
+            ed = route.get(st).getKey() + 1;
+            if (ed - st == 1 && Character.isLetterOrDigit(sentence.charAt(st))) {
+                sb.append(sentence.charAt(st));
+            } else {
+                if (sb.length() > 0) {
+                    result.add(sb.toString());
+                    sb.setLength(0);
+                }
+                result.add(sentence.substring(st, ed));
+            }
+            st = ed;
+        }
+        if (sb.length() > 0) {
+            result.add(sb.toString());
+        }
+        return result;
+    }
+
+    /**
+     * 如果词语不在字典内（freq==0），使用 HMM 判断是否可能是未登录词
+     */
+    private void doIfNeedHMM(WordBuilder wb, List<String> result) {
+        if (!wb.isEmpty()) {
+            if (wb.length() == 1) {
+                result.add(wb.build());
+            } else {
+                String str = wb.build(true);
+                if (wb.getWordFreq() == 0) {
+                    result.addAll(finalSeg.cut(str));
+                } else {
+                    result.addAll(Arrays.asList(str.split("")));
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据 DAG 上算出的最大概率路径将句子分词，并使用 HMM 识别可能出现的未登录词
+     */
+    private List<String> cutByDAGWithHMM(String sentence) {
+        List<String> result = new ArrayList<>();
+        SentenceDAG sentenceDAG = new SentenceDAG(sentence, tokenizer);
+        Map<Integer, Pair<Integer, Double>> route = sentenceDAG.getRoute();
+        int len = sentence.length();
+        int st = 0;
+        int ed;
+        String word;
+        WordBuilder wordBuilder = new WordBuilder(sentenceDAG);
+        while (st < len) {
+            ed = route.get(st).getKey() + 1;
+            word = sentence.substring(st, ed);
+            if (word.length() == 1) {
+                wordBuilder.append(ed);
+            } else {
+                doIfNeedHMM(wordBuilder, result);
+                result.add(word);
+            }
+            st = ed;
+        }
+        doIfNeedHMM(wordBuilder, result);
+        return result;
+    }
+
+    /**
+     * 全模式，把句子中所有的可以成词的词语都扫描出来, 速度非常快，但是不能解决歧义
+     */
+    private List<String> cutAll(String sentence) {
+        List<String> result = new ArrayList<>();
+        Map<Integer, List<Integer>> dag = SentenceDAG.makeDAG(sentence, tokenizer);
+        int[] last = {-1};
+        dag.forEach((k, l) -> {
+            if (l.size() == 1 && k > last[0]) {
+                result.add(sentence.substring(k, k + l.get(0)));
+                last[0] = k + l.get(0) - 1;
+            } else {
+                l.forEach(j -> {
+                    result.add(sentence.substring(k, k + j));
+                    last[0] = k + j - 1;
+                });
+            }
+        });
         return result;
     }
 }
