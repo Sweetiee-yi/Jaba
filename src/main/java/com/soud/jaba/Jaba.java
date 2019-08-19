@@ -13,9 +13,8 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * jieba 的 java 版本。
- * 分词结果和 jieba 保持一致，
- * 根据小说《围城》跑50次测速，速度比 java-analysis 的实现快30%。
+ * jieba 的 java 版本
+ * 分词结果和 jieba 保持一致
  *
  * @author Soud
  */
@@ -27,6 +26,14 @@ public class Jaba {
 
     private static Tokenizer tokenizer = Tokenizer.getInstance();
     private static FinalSeg finalSeg = FinalSeg.getInstance();
+
+    private static class JabaHolder {
+        static Jaba instance = new Jaba();
+    }
+
+    public static Jaba getInstance() {
+        return Jaba.JabaHolder.instance;
+    }
 
     /**
      * 加载用户自定义字典

@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 public class JabaCutTest {
 
-    private Jaba jaba = new Jaba();
+    private Jaba jaba = Jaba.getInstance();
 
     private String[] testSentences = {
             "这是一个伸手不见五指的黑夜。我叫孙悟空，我爱北京，我爱Python和C++。",
